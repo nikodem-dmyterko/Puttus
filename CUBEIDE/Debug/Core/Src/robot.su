@@ -1,0 +1,5 @@
+../Core/Src/robot.c:3:6:robot_init	24	static
+../Core/Src/robot.c:12:6:robot_linear_update	24	static
+../Core/Src/robot.c:18:6:robot_angular_update	24	static
+../Core/Src/robot.c:24:6:robot_set_end_position	16	static
+../Core/Src/robot.c:29:7:robot_error	16	static

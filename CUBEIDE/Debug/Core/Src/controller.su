@@ -1,0 +1,2 @@
+../Core/Src/controller.c:3:6:controller_init	32	static
+../Core/Src/controller.c:13:7:controller_control_signal	16	static
