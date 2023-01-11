@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2022 STMicroelectronics.
+  * Copyright (c) 2023 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -35,10 +35,10 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define INPUT_VALUE 50
+#define INPUT_VALUE
 #define MAX_PWM 1000
 #define MIN_PWM 500
-#define MIN_ERROR 0.5
+#define MIN_ERROR 5
 #define MAX_ERROR 50
 /* USER CODE END PTD */
 
@@ -65,15 +65,11 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
 struct us_sensor_str distance_sensor;
 struct Controller controller;
 struct Motor left_motor;
 struct Motor right_motor;
 struct Robot robot;
-
-
-char buff[10];
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
@@ -83,22 +79,19 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
 		distance_sensor.distance_cm = hc_sr04_convert_us_to_cm(echo_us);
+		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
 	}
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if(TIM3 == htim->Instance)
+	if(TIM4 == htim->Instance)
 	{
-		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16.6);
-		// motor_set_direction(&motor, 1);
-		// motor_update_duty(&motor, controller_control_signal(&controller, robot_error(&robot)));
-		motor_move(&left_motor, controller_control_signal(&controller, robot_error(&robot)));
-		motor_move(&right_motor, controller_control_signal(&controller, robot_error(&robot)));
-
-		gcvt(left_motor.duty, 6, buff);
-		strcat(buff, "\r\n");
-		HAL_UART_Transmit(&huart3, (uint8_t*)buff, strlen(buff), 1000);
+		float error = robot_error(&robot);
+		motor_set_direction(&left_motor, 1);
+		motor_update_duty(&left_motor, controller_control_signal(&controller, error));
+		motor_set_direction(&right_motor, 1);
+		motor_update_duty(&right_motor, controller_control_signal(&controller,error));
 	}
 }
 /* USER CODE END 0 */
@@ -133,16 +126,19 @@ int main(void)
   MX_GPIO_Init();
   MX_USART3_UART_Init();
   MX_USB_OTG_FS_PCD_Init();
-  MX_TIM3_Init();
   MX_TIM1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
   hc_sr04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
-  robot_init(&robot, distance_sensor.distance_cm, INPUT_VALUE);
-  robot_set_end_position(&robot, INPUT_VALUE);
+  robot_init(&robot, distance_sensor.distance_cm, 0);
+  robot_set_end_position(&robot, 15.0f);
   controller_init(&controller, MAX_PWM, 300, MIN_PWM, MIN_ERROR, MAX_ERROR);
+
   motor_init(&left_motor, &htim3, TIM_CHANNEL_1, FORWARD_MOTOR_1_GPIO_Port, BACKWARD_MOTOR_1_GPIO_Port, FORWARD_MOTOR_1_Pin, BACKWARD_MOTOR_1_Pin);
   motor_init(&right_motor, &htim3, TIM_CHANNEL_2, FORWARD_MOTOR_2_GPIO_Port, BACKWARD_MOTOR_2_GPIO_Port, FORWARD_MOTOR_2_Pin, BACKWARD_MOTOR_2_Pin);
+  HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
 
   /* Infinite loop */

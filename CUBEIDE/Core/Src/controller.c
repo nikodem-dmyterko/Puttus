@@ -14,7 +14,7 @@ float controller_control_signal(struct Controller* controller, float error)
 {
 	//float dot_error = error-controller->previous_error;
 	controller->previous_error = error;
-	if(error < -controller->MAX_ERROR/4)
+	if(error < -controller->MAX_ERROR)
 	{
 		return controller->MAX_CONTROL_SIGNAL;
 	}
@@ -26,7 +26,7 @@ float controller_control_signal(struct Controller* controller, float error)
 	{
 		return 0;
 	}
-	else if(error < controller->MAX_ERROR/4)
+	else if(error < controller->MAX_ERROR)
 	{
 		return (controller->MAX_CONTROL_SIGNAL/controller->MAX_ERROR)*-error - controller->START_CONTROL_SIGNAL;
 	}
