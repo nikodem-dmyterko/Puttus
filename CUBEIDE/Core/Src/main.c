@@ -88,10 +88,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if(TIM4 == htim->Instance)
 	{
 		float error = robot_error(&robot);
-		motor_set_direction(&left_motor, 1);
-		motor_update_duty(&left_motor, controller_control_signal(&controller, error));
-		motor_set_direction(&right_motor, 1);
-		motor_update_duty(&right_motor, controller_control_signal(&controller,error));
+		motor_move(&left_motor, controller_control_signal(&controller, error));
+		motor_move(&right_motor, controller_control_signal(&controller, error));
 	}
 }
 /* USER CODE END 0 */
@@ -131,14 +129,27 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM4_Init();
   /* USER CODE BEGIN 2 */
+  // HC-SR04 init
   hc_sr04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
+
+  // Robot init
   robot_init(&robot, distance_sensor.distance_cm, 0);
+
+  // Set end position
   robot_set_end_position(&robot, 15.0f);
+
+  // Controller init
   controller_init(&controller, MAX_PWM, 300, MIN_PWM, MIN_ERROR, MAX_ERROR);
 
+  // Left motor init
   motor_init(&left_motor, &htim3, TIM_CHANNEL_1, FORWARD_MOTOR_1_GPIO_Port, BACKWARD_MOTOR_1_GPIO_Port, FORWARD_MOTOR_1_Pin, BACKWARD_MOTOR_1_Pin);
+
+  // Right motor init
   motor_init(&right_motor, &htim3, TIM_CHANNEL_2, FORWARD_MOTOR_2_GPIO_Port, BACKWARD_MOTOR_2_GPIO_Port, FORWARD_MOTOR_2_Pin, BACKWARD_MOTOR_2_Pin);
+
+  // Timer 4 start with interrupt
   HAL_TIM_Base_Start_IT(&htim4);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
