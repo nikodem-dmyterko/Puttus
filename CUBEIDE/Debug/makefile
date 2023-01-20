@@ -60,8 +60,8 @@ all: main-build
 main-build: Projektv2.elf secondary-outputs
 
 # Tool invocations
-Projektv2.elf Projektv2.map: $(OBJS) $(USER_OBJS) C:\Users\Nikod\OneDrive\Pulpit\STUDIA\Semestr\ 5\SM\Laboratorium\Projektv2\STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-gcc -o "Projektv2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\Nikod\OneDrive\Pulpit\STUDIA\Semestr 5\SM\Laboratorium\Projektv2\STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Projektv2.map" -Wl,--gc-sections -static -L"C:\Users\Nikod\STM32Cube\Repository\Packs\ARM\CMSIS\5.6.0\CMSIS\DSP\Lib\GCC" --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Projektv2.elf Projektv2.map: $(OBJS) $(USER_OBJS) C:\Users\tojes\Puttus\CUBEIDE\STM32F746ZGTX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-gcc -o "Projektv2.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m7 -T"C:\Users\tojes\Puttus\CUBEIDE\STM32F746ZGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Projektv2.map" -Wl,--gc-sections -static -L"C:\Users\tojes\STM32Cube\Repository\Packs\ARM\CMSIS\5.6.0\CMSIS\DSP\Lib\GCC" -L"C:\Users\Nikod\STM32Cube\Repository\Packs\ARM\CMSIS\5.6.0\CMSIS\DSP\Lib\GCC" --specs=nano.specs -mfpu=fpv5-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

@@ -24,6 +24,8 @@
 #include "lcd_i2c.h"
 #include "stm32f7xx_hal.h"
 #include "i2c.h"
+#include "string.h"
+#include "stdio.h"
 
 
 
@@ -114,3 +116,31 @@ void lcd_clear(struct lcd_disp * lcd)
 	/* clear display */
 	lcd_write(lcd->addr, CLEAR_LCD, xpin);
 }
+
+//funkcja wyświelająca
+
+void update_lcd(struct lcd_disp * disp, int count, float upf, float downf, float upf1, float downf1)
+{
+	char messegeUp[17];
+	char messegeDown[17];
+
+	if(count%2 == 0)
+	{
+		sprintf((char *)messegeUp, "zadana: %f", upf);
+		sprintf((char *)disp->f_line, messegeUp);
+		sprintf((char *)messegeDown,  "odczytana: %f", downf);
+		sprintf((char *)disp->s_line, messegeDown);
+		lcd_display(disp);
+	}
+	else
+	{
+		sprintf((char *)messegeUp, "uchyb: %f", upf1);
+		sprintf((char *)disp->f_line, messegeUp);
+		sprintf((char *)messegeDown,  "AIR: %f", downf1);
+		sprintf((char *)disp->s_line, messegeDown);
+		lcd_display(disp);
+	}
+
+}
+
+

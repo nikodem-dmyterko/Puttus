@@ -85,10 +85,7 @@ float32_t fir_state[13];
 //zmienne do wyświetlacza
 int count = 0;
 int count_prev = 0;
-int i = 0;
 
-char messegeUp[16];
-char messegeDown[16];
 
 
 
@@ -100,8 +97,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
 		distance_sensor.distance_cm = hc_sr04_convert_us_to_cm(echo_us);
-//		arm_fir_f32(&fir, &distance_sensor.distance_cm, &robot.position, 1);
-		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
+		arm_fir_f32(&fir, &distance_sensor.distance_cm, &robot.position, 1);
+//		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
 	}
 }
 
@@ -129,27 +126,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	}
 }
 
-//funkcja wyświelająca
-void update_lcd(int count)
-{
-	if(count%2 != 0)
-	{
-		//zadana wartosc
-		sprintf((char *)messegeUp, "zadana: %f", robot.end_position);
-		sprintf((char *)disp.f_line, messegeUp);
-		sprintf((char *)messegeDown, "aktualna: %f", robot.position);
-		sprintf((char *)disp.s_line, messegeDown);
-		lcd_display(&disp);
-	}
-	else
-	{
-		//uchyb
-		sprintf((char *)messegeUp, "uchyb: %f", robot.end_position - robot.position);
-		sprintf((char *)disp.f_line, messegeUp);
-		sprintf((char *)disp.s_line, "AiR          ");
-		lcd_display(&disp);
-	}
-}
+
 /* USER CODE END 0 */
 
 /**
@@ -219,7 +196,7 @@ int main(void)
 	//wyswielacz
 	  if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == 1)
 	  {
-			update_lcd(count);
+			update_lcd(&disp, count, robot.end_position, robot.position, robot.end_position-robot.position, 69.0);
 	  }
     /* USER CODE END WHILE */
 

@@ -5,6 +5,7 @@
 #include "arm_math.h"
 
 struct Robot{
+//	float position;
 	float32_t position;
 	float previous_position;
 	float orientation;

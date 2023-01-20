@@ -61,9 +61,12 @@ struct lcd_disp {
 	bool bl;
 };
 
+
+
 void lcd_init(struct lcd_disp * lcd);
 void lcd_write(uint8_t addr, uint8_t data, uint8_t xpin);
 void lcd_display(struct lcd_disp * lcd);
 void lcd_clear(struct lcd_disp * lcd);
+void update_lcd(struct lcd_disp * disp, int count, float upf, float downf, float upf1, float downf1);
 
 #endif /* INC_LCD_I2C_H_ */
