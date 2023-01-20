@@ -1,5 +1,4 @@
 ../Core/Src/motor.c:3:6:motor_init	24	static
-../Core/Src/motor.c:24:6:motor_update_duty	16	static
-../Core/Src/motor.c:30:6:motor_set_direction	16	static
-../Core/Src/motor.c:44:6:motor_stop	16	static
-../Core/Src/motor.c:51:6:motor_move	24	static
+../Core/Src/motor.c:24:6:motor_set_direction	16	static
+../Core/Src/motor.c:38:6:motor_stop	16	static
+../Core/Src/motor.c:45:6:motor_move	16	static

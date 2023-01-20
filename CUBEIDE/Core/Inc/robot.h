@@ -2,9 +2,10 @@
 #define INC_ROBOT_H_
 
 #include "main.h"
+#include "arm_math.h"
 
 struct Robot{
-	float position;
+	float32_t position;
 	float previous_position;
 	float orientation;
 	float previous_orientation;

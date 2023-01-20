@@ -12,7 +12,6 @@ void controller_init(struct Controller* controller, float MAX_CONTROL_SIGNAL, fl
 
 float controller_control_signal(struct Controller* controller, float error)
 {
-	//float dot_error = error-controller->previous_error;
 	controller->previous_error = error;
 	if(error < -controller->MAX_ERROR)
 	{

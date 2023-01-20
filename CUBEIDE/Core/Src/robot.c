@@ -1,6 +1,7 @@
 #include "robot.h"
 
-void robot_init(struct Robot* robot, float position, float orientation){
+void robot_init(struct Robot* robot, float position, float orientation)
+{
 	robot->previous_position = position;
 	robot->position = position;
 	robot->orientation = orientation;
@@ -9,13 +10,15 @@ void robot_init(struct Robot* robot, float position, float orientation){
 	robot->angular_velocity = 0;
 }
 
-void robot_linear_update(struct Robot* robot, float measurement, float time){
+void robot_linear_update(struct Robot* robot, float measurement, float time)
+{
 	robot->position = measurement;
 	robot->linear_velocity = (robot->position - robot->previous_position )/time;
 	robot->previous_position = robot->position;
 }
 
-void robot_angular_update(struct Robot* robot, float measurement, float time){
+void robot_angular_update(struct Robot* robot, float measurement, float time)
+{
 	robot->orientation = measurement;
 	robot->angular_velocity = (robot->previous_orientation - robot->orientation)/time;
 	robot->previous_orientation = robot->orientation;

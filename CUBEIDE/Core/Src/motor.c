@@ -10,22 +10,16 @@ void motor_init(struct Motor* motor,TIM_HandleTypeDef* htim, uint32_t PWM_CHANNE
 	motor->FORWARD_PIN = FORWARD_PIN;
 	motor->BACKWARD_PIN = BACKWARD_PIN;
 
-//	if(!tim)
-//	{
-//		HAL_TIM_Base_Start_IT(motor->htim);
-//		tim = !tim;
-//	}
-
 	HAL_TIM_PWM_Start(motor->htim, PWM_CHANNEL);
 
 	motor_stop(motor);
 }
 
-void motor_update_duty(struct Motor* motor, float duty)
-{
-	motor->duty = duty;
-	__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, abs(duty));
-}
+//void motor_update_duty(struct Motor* motor, float duty)
+//{
+//	motor->duty = duty;
+//	__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, abs(duty));
+//}
 
 void motor_set_direction(struct Motor* motor, _Bool direction)
 {
@@ -48,25 +42,22 @@ void motor_stop(struct Motor* motor)
 	__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, 0);
 }
 
-void motor_move(struct Motor* motor[], float duty)
+void motor_move(struct Motor* motor, float duty)
 {
-	for(int i = 0; i < sizeof(motor)/sizeof(motor[0]); i++)
+	motor->duty = duty;
+	if(motor->duty > 0)
 	{
-		motor[i]->duty = duty;
-		if(motor[i]->duty < 0)
-		{
-			motor_set_direction(motor[i], 1);
-			__HAL_TIM_SET_COMPARE(motor[i]->htim, motor[i]->PWM_CHANNEL, abs(motor[i]->duty));
-		}
-		if(motor[i]->duty > 0)
-		{
-			motor_set_direction(motor[i], 0);
-			__HAL_TIM_SET_COMPARE(motor[i]->htim, motor[i]->PWM_CHANNEL, motor[i]->duty);
-		}
-		if(motor[i]->duty == 0)
-		{
-			motor_stop(motor[i]);
-			__HAL_TIM_SET_COMPARE(motor[i]->htim, motor[i]->PWM_CHANNEL, motor[i]->duty);
-		}
+		motor_set_direction(motor, 1);
+		__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, abs(motor->duty));
+	}
+	if(motor->duty < 0)
+	{
+		motor_set_direction(motor, 0);
+		__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, abs(motor->duty));
+	}
+	if(motor->duty == 0)
+	{
+		motor_stop(motor);
+		__HAL_TIM_SET_COMPARE(motor->htim, motor->PWM_CHANNEL, motor->duty);
 	}
 }

@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "usb_otg.h"
@@ -29,17 +30,23 @@
 #include "robot.h"
 #include "motor.h"
 #include "controller.h"
+#include "fir_coeffs.h"
+#include "arm_math.h"
 #include "string.h"
 #include "stdlib.h"
+#include "lcd_i2c.h"
+#include "stdbool.h"
+#include "stdio.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define INPUT_VALUE
+#define INPUT_VALUE 100
 #define MAX_PWM 1000
-#define MIN_PWM 500
-#define MIN_ERROR 5
-#define MAX_ERROR 50
+#define MIN_PWM 700
+#define MIN_ERROR 2
+#define MAX_ERROR 200
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -54,7 +61,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+struct lcd_disp disp;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -65,11 +72,25 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+char buffer[3] = {'1', '0', '0'};
+
 struct us_sensor_str distance_sensor;
 struct Controller controller;
 struct Motor left_motor;
 struct Motor right_motor;
 struct Robot robot;
+arm_fir_instance_f32 fir;
+float32_t fir_state[13];
+
+//zmienne do wyświetlacza
+int count = 0;
+int count_prev = 0;
+int i = 0;
+
+char messegeUp[16];
+char messegeDown[16];
+
+
 
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
@@ -79,6 +100,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
 		distance_sensor.distance_cm = hc_sr04_convert_us_to_cm(echo_us);
+//		arm_fir_f32(&fir, &distance_sensor.distance_cm, &robot.position, 1);
 		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
 	}
 }
@@ -88,8 +110,44 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	if(TIM4 == htim->Instance)
 	{
 		float error = robot_error(&robot);
-		motor_move(&left_motor, controller_control_signal(&controller, error));
-		motor_move(&right_motor, controller_control_signal(&controller, error));
+		float duty = controller_control_signal(&controller, error);
+		motor_move(&left_motor, duty);
+		motor_move(&right_motor, duty);
+	}
+}
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == USART3)
+	{
+		char distance[3];
+
+		sscanf((char*)buffer, "%c%c%c", &distance[0], &distance[1], &distance[2]);
+
+		robot_set_end_position(&robot, atoi(distance));
+		HAL_UART_Receive_IT(&huart3, (uint8_t*)buffer, strlen(buffer));
+	}
+}
+
+//funkcja wyświelająca
+void update_lcd(int count)
+{
+	if(count%2 != 0)
+	{
+		//zadana wartosc
+		sprintf((char *)messegeUp, "zadana: %f", robot.end_position);
+		sprintf((char *)disp.f_line, messegeUp);
+		sprintf((char *)messegeDown, "aktualna: %f", robot.position);
+		sprintf((char *)disp.s_line, messegeDown);
+		lcd_display(&disp);
+	}
+	else
+	{
+		//uchyb
+		sprintf((char *)messegeUp, "uchyb: %f", robot.end_position - robot.position);
+		sprintf((char *)disp.f_line, messegeUp);
+		sprintf((char *)disp.s_line, "AiR          ");
+		lcd_display(&disp);
 	}
 }
 /* USER CODE END 0 */
@@ -128,27 +186,28 @@ int main(void)
   MX_TIM2_Init();
   MX_TIM3_Init();
   MX_TIM4_Init();
+  MX_I2C1_Init();
+  MX_TIM8_Init();
   /* USER CODE BEGIN 2 */
-  // HC-SR04 init
+  arm_fir_init_f32(&fir, BL, B, fir_state, 1);
   hc_sr04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
-
-  // Robot init
   robot_init(&robot, distance_sensor.distance_cm, 0);
-
-  // Set end position
-  robot_set_end_position(&robot, 15.0f);
-
-  // Controller init
+  robot_set_end_position(&robot, INPUT_VALUE);
   controller_init(&controller, MAX_PWM, 300, MIN_PWM, MIN_ERROR, MAX_ERROR);
-
-  // Left motor init
   motor_init(&left_motor, &htim3, TIM_CHANNEL_1, FORWARD_MOTOR_1_GPIO_Port, BACKWARD_MOTOR_1_GPIO_Port, FORWARD_MOTOR_1_Pin, BACKWARD_MOTOR_1_Pin);
-
-  // Right motor init
   motor_init(&right_motor, &htim3, TIM_CHANNEL_2, FORWARD_MOTOR_2_GPIO_Port, BACKWARD_MOTOR_2_GPIO_Port, FORWARD_MOTOR_2_Pin, BACKWARD_MOTOR_2_Pin);
 
-  // Timer 4 start with interrupt
   HAL_TIM_Base_Start_IT(&htim4);
+  HAL_UART_Receive_IT(&huart3, (uint8_t*)buffer, strlen(buffer));
+
+  //zegar enkodera
+  HAL_TIM_Encoder_Start(&htim8, TIM_CHANNEL_1);
+
+  //inicjalizacja wyswietlacza
+  disp.addr = (0x27 << 1);
+  disp.bl = true;
+  lcd_init(&disp);
+
 
   /* USER CODE END 2 */
 
@@ -156,6 +215,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  count = __HAL_TIM_GET_COUNTER(&htim8);
+	//wyswielacz
+	  if(HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin) == 1)
+	  {
+			update_lcd(count);
+	  }
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
