@@ -42,11 +42,13 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define INPUT_VALUE 100
+#define INPUT_VALUE 15
 #define MAX_PWM 1000
 #define MIN_PWM 700
 #define MIN_ERROR 2
-#define MAX_ERROR 200
+#define MAX_ERROR 50
+#define Ki 1.5
+#define Kp 1.2
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -87,8 +89,6 @@ int count = 0;
 int count_prev = 0;
 
 
-
-
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if(TIM1 == htim->Instance)
@@ -97,8 +97,8 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 
 		echo_us = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
 		distance_sensor.distance_cm = hc_sr04_convert_us_to_cm(echo_us);
-		arm_fir_f32(&fir, &distance_sensor.distance_cm, &robot.position, 1);
-//		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
+//		arm_fir_f32(&fir, &distance_sensor.distance_cm, &robot.position, 1);
+		robot_linear_update(&robot, distance_sensor.distance_cm, 1/16);
 	}
 }
 
@@ -170,7 +170,7 @@ int main(void)
   hc_sr04_init(&distance_sensor, &htim1, &htim2, TIM_CHANNEL_3);
   robot_init(&robot, distance_sensor.distance_cm, 0);
   robot_set_end_position(&robot, INPUT_VALUE);
-  controller_init(&controller, MAX_PWM, 300, MIN_PWM, MIN_ERROR, MAX_ERROR);
+  controller_init(&controller, MAX_PWM, 300, MIN_PWM, MIN_ERROR, MAX_ERROR, Ki, Kp);
   motor_init(&left_motor, &htim3, TIM_CHANNEL_1, FORWARD_MOTOR_1_GPIO_Port, BACKWARD_MOTOR_1_GPIO_Port, FORWARD_MOTOR_1_Pin, BACKWARD_MOTOR_1_Pin);
   motor_init(&right_motor, &htim3, TIM_CHANNEL_2, FORWARD_MOTOR_2_GPIO_Port, BACKWARD_MOTOR_2_GPIO_Port, FORWARD_MOTOR_2_Pin, BACKWARD_MOTOR_2_Pin);
 
